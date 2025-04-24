@@ -1,118 +1,168 @@
-/* Custom styles for the CSV Search Webapp */
+/**
+ * CSV Search Webapp - Styles
+ *
+ * This stylesheet contains custom styles for the CSV Search Webapp.
+ * It extends Bootstrap's default styling with custom design elements
+ * and provides specific styling for the DataTables components.
+ *
+ * @author Nicholas G
+ * @version 1.0.0
+ */
+
+/* ======================================
+   General Layout and Container Styles
+   ====================================== */
 
 body {
-    background-color: #f8f9fa;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    background-color: #f8f9fa;  /* Light gray background */
+    display: flex;              /* Use flexbox for layout */
+    flex-direction: column;     /* Stack children vertically */
+    min-height: 100vh;          /* Full viewport height */
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1400px;          /* Wider container for data tables */
 }
 
+/* ======================================
+   Card Component Styles
+   ====================================== */
+
 .card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: none;
-    border-radius: 8px;
-    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
+    border: none;                               /* Remove default border */
+    border-radius: 8px;                         /* Rounded corners */
+    overflow: hidden;                           /* Ensure content stays within rounded corners */
 }
 
 .card-header {
-    background-color: #f1f5f9;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 1rem 1.25rem;
+    background-color: #f1f5f9;                  /* Light blue-gray header */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Subtle border */
+    padding: 1rem 1.25rem;                      /* Increased padding for better spacing */
 }
 
+/* ======================================
+   Navigation Bar Styles
+   ====================================== */
+
 .navbar {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
 }
 
 .navbar-brand {
-    font-weight: 600;
+    font-weight: 600;                           /* Semi-bold brand text */
 }
 
+/* ======================================
+   DataTable Core Styles
+   ====================================== */
+
 #csvDataTable {
-    width: 100% !important;
-    border-collapse: separate;
-    border-spacing: 0;
+    width: 100% !important;                    /* Ensure table takes full width */
+    border-collapse: separate;                 /* Better border handling */
+    border-spacing: 0;                         /* No space between cells */
 }
 
 #csvDataTable thead th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
+    background-color: #f8f9fa;                 /* Light gray header background */
+    font-weight: 600;                          /* Semi-bold header text */
+    border-bottom: 2px solid #dee2e6;          /* Distinct bottom border */
 }
 
 #csvDataTable tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
+    background-color: rgba(0, 123, 255, 0.05);  /* Subtle blue highlight on hover */
 }
 
+/* ======================================
+   DataTable Component Styles
+   ====================================== */
+
+/* Search filter positioning */
 .dataTables_wrapper .dataTables_filter {
-    float: right;
-    margin-bottom: 10px;
+    float: right;                              /* Align to right */
+    margin-bottom: 10px;                       /* Space below */
 }
 
+/* Length menu positioning */
 .dataTables_wrapper .dataTables_length {
-    float: left;
-    margin-bottom: 10px;
+    float: left;                               /* Align to left */
+    margin-bottom: 10px;                       /* Space below */
 }
 
+/* Info text styling */
 .dataTables_wrapper .dataTables_info {
-    clear: both;
-    padding-top: 10px;
-    color: #6c757d;
+    clear: both;                               /* Clear floats */
+    padding-top: 10px;                         /* Space above */
+    color: #6c757d;                            /* Muted text color */
 }
 
+/* Pagination controls positioning */
 .dataTables_wrapper .dataTables_paginate {
-    float: right;
-    padding-top: 10px;
+    float: right;                              /* Align to right */
+    padding-top: 10px;                         /* Space above */
 }
 
+/* Individual page buttons */
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-    border-radius: 4px;
-    margin: 0 2px;
+    border-radius: 4px;                        /* Rounded corners */
+    margin: 0 2px;                             /* Space between buttons */
 }
 
+/* Current/active page button */
 .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-    background: #0d6efd !important;
-    border-color: #0d6efd !important;
-    color: white !important;
+    background: #0d6efd !important;            /* Bootstrap primary blue */
+    border-color: #0d6efd !important;          /* Matching border */
+    color: white !important;                   /* White text */
 }
 
+/* Hover state for page buttons */
 .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-    background: #e9ecef !important;
-    border-color: #dee2e6 !important;
-    color: #212529 !important;
+    background: #e9ecef !important;            /* Light gray background */
+    border-color: #dee2e6 !important;          /* Subtle border */
+    color: #212529 !important;                 /* Dark text */
 }
+
+/* ======================================
+   Alert and Notification Styles
+   ====================================== */
 
 .alert-info {
-    background-color: #cfe2ff;
-    border-color: #b6d4fe;
-    color: #084298;
+    background-color: #cfe2ff;                 /* Light blue background */
+    border-color: #b6d4fe;                     /* Blue border */
+    color: #084298;                            /* Dark blue text */
 }
+
+/* ======================================
+   Footer Styles
+   ====================================== */
 
 footer {
-    margin-top: auto;
-    border-top: 1px solid #dee2e6;
+    margin-top: auto;                          /* Push to bottom with flexbox */
+    border-top: 1px solid #dee2e6;             /* Subtle top border */
 }
 
-/* Responsive adjustments */
+/* ======================================
+   Responsive Design Adjustments
+   ====================================== */
+
 @media (max-width: 768px) {
+    /* Center DataTables components on small screens */
     .dataTables_wrapper .dataTables_length,
     .dataTables_wrapper .dataTables_filter,
     .dataTables_wrapper .dataTables_info,
     .dataTables_wrapper .dataTables_paginate {
-        float: none;
-        text-align: center;
+        float: none;                           /* Remove float */
+        text-align: center;                    /* Center text */
     }
 
+    /* Stack card header elements vertically */
     .card-header {
-        flex-direction: column;
+        flex-direction: column;                /* Stack vertically */
     }
 
+    /* Full-width flex containers in card headers */
     .card-header .d-flex {
-        margin-top: 10px;
-        width: 100%;
+        margin-top: 10px;                      /* Space above */
+        width: 100%;                           /* Full width */
     }
 }
