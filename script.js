@@ -62,6 +62,22 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleAllColumns(false);
     });
 
+    // Set up event listener to set timestamp when upload modal is shown
+    document.getElementById('uploadModal').addEventListener('show.bs.modal', function() {
+        const timestampField = document.getElementById('formTimestamp');
+        if (timestampField) {
+            timestampField.value = Date.now().toString();
+        }
+    });
+
+    // Set up event listener to clear honeypot field when upload modal is closed
+    document.getElementById('uploadModal').addEventListener('hidden.bs.modal', function() {
+        const honeypotField = document.getElementById('website');
+        if (honeypotField) {
+            honeypotField.value = '';
+        }
+    });
+
     // Automatically load the default CSV file when the page loads
     loadDefaultCSV();
 });
@@ -77,6 +93,41 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 const handleFileUpload = async () => {
     try {
+        // Check honeypot field - if it's filled, it's likely a bot
+        const honeypotField = document.getElementById('website');
+        if (honeypotField && honeypotField.value) {
+            // Log the bot attempt
+            logBotAttempt('Honeypot field was filled', {
+                honeypotValue: honeypotField.value
+            });
+
+            // Pretend the upload was successful but don't actually process anything
+            // This makes the bot think its attack worked while protecting your site
+            showError('Upload failed: Invalid file format');
+            return;
+        }
+
+        // Check timestamp to detect automated form submissions
+        const timestampField = document.getElementById('formTimestamp');
+        if (timestampField && timestampField.value) {
+            const formOpenTime = parseInt(timestampField.value, 10);
+            const currentTime = Date.now();
+            const timeDifference = currentTime - formOpenTime;
+
+            // If the form was submitted in less than 1.5 seconds, it's likely a bot
+            // Human users typically take longer to select a file and submit
+            if (timeDifference < 1500) {
+                logBotAttempt('Form submitted too quickly', {
+                    timeDifference: timeDifference,
+                    threshold: 1500
+                });
+
+                // Pretend the upload was successful but don't actually process anything
+                showError('Upload failed: Please try again');
+                return;
+            }
+        }
+
         const file = document.getElementById('csvFileInput').files[0];
         if (!file) throw new Error('No file selected');
 
@@ -121,6 +172,10 @@ const handleFileUpload = async () => {
     }
 };
 
+/**
+ * Display an error message to the user
+ * @param {string} message - The error message to display
+ */
 const showError = (message) => {
     const alertDiv = document.createElement('div');
     alertDiv.className = 'alert alert-danger alert-dismissible fade show';
@@ -129,6 +184,36 @@ const showError = (message) => {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     document.querySelector('.container').prepend(alertDiv);
+};
+
+/**
+ * Log a bot attempt to the console and potentially to a server
+ * @param {string} reason - The reason the bot was detected
+ * @param {Object} data - Additional data about the bot attempt
+ */
+const logBotAttempt = (reason, data = {}) => {
+    // Create log data object
+    const logData = {
+        timestamp: new Date().toISOString(),
+        reason: reason,
+        userAgent: navigator.userAgent,
+        ...data
+    };
+
+    // Log to console for development
+    console.warn(`Bot detected: ${reason}`, logData);
+
+    // In a production environment, you would send this to your server
+    // Simulated server logging - in production, uncomment the fetch code below
+    /*
+    fetch('/api/security/log-bot', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(logData)
+    }).catch(err => console.error('Failed to log bot attempt:', err));
+    */
 };
 
 //=============================================================================

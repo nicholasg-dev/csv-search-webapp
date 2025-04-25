@@ -135,11 +135,20 @@
                 </div>
                 <!-- Modal Body - File Input -->
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="csvFileInput" class="form-label">Select CSV File</label>
-                        <!-- File input restricted to CSV files only -->
-                        <input class="form-control" type="file" id="csvFileInput" accept=".csv">
-                    </div>
+                    <form id="uploadForm" onsubmit="return false;">
+                        <div class="mb-3">
+                            <label for="csvFileInput" class="form-label">Select CSV File</label>
+                            <!-- File input restricted to CSV files only -->
+                            <input class="form-control" type="file" id="csvFileInput" accept=".csv">
+                        </div>
+                        <!-- Honeypot field - hidden from humans but visible to bots -->
+                        <div class="honeypot-field">
+                            <label for="website">Website</label>
+                            <input type="text" id="website" name="website" autocomplete="off">
+                            <!-- Hidden timestamp to detect automated form submissions -->
+                            <input type="hidden" id="formTimestamp" name="formTimestamp">
+                        </div>
+                    </form>
                 </div>
                 <!-- Modal Footer - Action Buttons -->
                 <div class="modal-footer">

@@ -167,6 +167,22 @@ footer {
     }
 }
 
+/* ======================================
+   Security - Honeypot
+   ====================================== */
+
+/* Hide honeypot field from humans but keep it accessible to bots */
+.honeypot-field {
+    opacity: 0;                               /* Make it invisible */
+    position: absolute;                        /* Take it out of the normal flow */
+    top: 0;                                    /* Position it off-screen */
+    left: -9999px;                             /* Move it far off-screen */
+    height: 0;                                 /* No height */
+    width: 0;                                  /* No width */
+    z-index: -1;                               /* Behind everything */
+    pointer-events: none;                      /* Cannot be interacted with */
+}
+
 .filter-panel {
     background: #fff;
     padding: 1rem;
