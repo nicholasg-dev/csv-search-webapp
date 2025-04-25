@@ -50,6 +50,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('uploadBtn').addEventListener('click', handleFileUpload);
     document.getElementById('exportBtn').addEventListener('click', exportFilteredData);
 
+    // Set up event listener for column visibility modal
+    document.getElementById('columnModal').addEventListener('show.bs.modal', populateColumnToggleList);
+
+    // Set up event listeners for select/deselect all columns buttons
+    document.getElementById('selectAllColumns').addEventListener('click', function() {
+        toggleAllColumns(true);
+    });
+
+    document.getElementById('deselectAllColumns').addEventListener('click', function() {
+        toggleAllColumns(false);
+    });
+
     // Automatically load the default CSV file when the page loads
     loadDefaultCSV();
 });
@@ -67,18 +79,18 @@ const handleFileUpload = async () => {
     try {
         const file = document.getElementById('csvFileInput').files[0];
         if (!file) throw new Error('No file selected');
-        
+
         // Add file size validation
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
         if (file.size > MAX_FILE_SIZE) {
             throw new Error('File size exceeds 50MB limit');
         }
-        
+
         // Add file type validation
         if (!file.type && !file.name.endsWith('.csv')) {
             throw new Error('Invalid file type. Please upload a CSV file');
         }
-        
+
         // Parse the CSV file using PapaParse library
         Papa.parse(file, {
             header: true,              // Treat the first row as headers
@@ -159,7 +171,7 @@ function displayData(data, headers) {
 
     try {
         // Initialize DataTable with the CSV data
-        dataTable = new DataTable('#csvDataTable', {
+        dataTable = $('#csvDataTable').DataTable({
             // Data configuration
             data: data,                          // The CSV data
             columns: headers.map((header, index) => ({
@@ -233,6 +245,15 @@ function displayData(data, headers) {
                 dataTable.search(this.value).draw();
             });
         }
+
+        // Load user preferences (column visibility, page length, etc.)
+        loadPreferences();
+
+        // Add event listener to save preferences when user changes page length
+        document.querySelector('.dataTables_length select').addEventListener('change', savePreferences);
+
+        // Add event listener to save preferences when user sorts columns
+        document.querySelector('#csvDataTable').addEventListener('order.dt', savePreferences);
     } catch (error) {
         // Handle any errors that occur during DataTable initialization
         console.error('Error initializing DataTable:', error);
@@ -365,7 +386,7 @@ function exportFilteredData() {
 const loadData = async (data) => {
     const CHUNK_SIZE = 1000;
     let currentIndex = 0;
-    
+
     while (currentIndex < data.length) {
         const chunk = data.slice(currentIndex, currentIndex + CHUNK_SIZE);
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -375,8 +396,102 @@ const loadData = async (data) => {
     dataTable.draw();
 };
 
-// Save user preferences
+/**
+ * Populates the column toggle list in the column visibility modal
+ * This function is called when the column visibility modal is shown
+ */
+function populateColumnToggleList() {
+    // Make sure the DataTable exists
+    if (!dataTable) {
+        console.error('DataTable not initialized');
+        return;
+    }
+
+    // Get the column toggle list container
+    const columnToggleList = document.getElementById('columnToggleList');
+    if (!columnToggleList) {
+        console.error('Column toggle list container not found');
+        return;
+    }
+
+    // Clear the existing list
+    columnToggleList.innerHTML = '';
+
+    // Get all columns from the DataTable
+    const columns = dataTable.columns();
+    const columnCount = columns.data().length;
+
+    // Create a toggle button for each column
+    for (let i = 0; i < columnCount; i++) {
+        // Get the column header text
+        const columnHeader = dataTable.column(i).header();
+        const columnName = columnHeader ? columnHeader.textContent : `Column ${i+1}`;
+
+        // Get the current visibility state
+        const isVisible = dataTable.column(i).visible();
+
+        // Create a list item with a toggle switch
+        const listItem = document.createElement('div');
+        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        listItem.innerHTML = `
+            <span>${columnName}</span>
+            <div class="form-check form-switch">
+                <input class="form-check-input column-toggle" type="checkbox"
+                       data-column="${i}" id="column-toggle-${i}" ${isVisible ? 'checked' : ''}>
+            </div>
+        `;
+
+        // Add the list item to the container
+        columnToggleList.appendChild(listItem);
+    }
+
+    // Add event listeners to the toggle switches
+    const toggles = document.querySelectorAll('.column-toggle');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const columnIndex = this.getAttribute('data-column');
+            const isVisible = this.checked;
+
+            // Toggle the column visibility
+            dataTable.column(columnIndex).visible(isVisible);
+
+            // Save the updated preferences
+            savePreferences();
+        });
+    });
+}
+
+/**
+ * Toggle visibility of all columns
+ * @param {boolean} visible - Whether to show (true) or hide (false) all columns
+ */
+function toggleAllColumns(visible) {
+    // Make sure the DataTable exists
+    if (!dataTable) {
+        console.error('DataTable not initialized');
+        return;
+    }
+
+    // Toggle all columns in the DataTable
+    dataTable.columns().visible(visible);
+
+    // Update all toggle switches in the modal
+    const toggles = document.querySelectorAll('.column-toggle');
+    toggles.forEach(toggle => {
+        toggle.checked = visible;
+    });
+
+    // Save the updated preferences
+    savePreferences();
+}
+
+/**
+ * Save user preferences to localStorage
+ * This includes page length, visible columns, and sort order
+ */
 const savePreferences = () => {
+    if (!dataTable) return;
+
     const preferences = {
         pageLength: dataTable.page.len(),
         visibleColumns: dataTable.columns().visible().toArray(),
@@ -385,15 +500,38 @@ const savePreferences = () => {
     localStorage.setItem('csvWebappPreferences', JSON.stringify(preferences));
 };
 
-// Load user preferences
+/**
+ * Load user preferences from localStorage
+ * This includes page length, visible columns, and sort order
+ */
 const loadPreferences = () => {
+    if (!dataTable) return;
+
     const saved = localStorage.getItem('csvWebappPreferences');
     if (saved) {
-        const preferences = JSON.parse(saved);
-        dataTable.page.len(preferences.pageLength).draw();
-        preferences.visibleColumns.forEach((visible, index) => {
-            dataTable.column(index).visible(visible);
-        });
-        dataTable.order(preferences.sortOrder).draw();
+        try {
+            const preferences = JSON.parse(saved);
+
+            // Set page length
+            if (preferences.pageLength) {
+                dataTable.page.len(preferences.pageLength).draw();
+            }
+
+            // Set column visibility
+            if (preferences.visibleColumns && Array.isArray(preferences.visibleColumns)) {
+                preferences.visibleColumns.forEach((visible, index) => {
+                    if (index < dataTable.columns().data().length) {
+                        dataTable.column(index).visible(visible);
+                    }
+                });
+            }
+
+            // Set sort order
+            if (preferences.sortOrder && Array.isArray(preferences.sortOrder)) {
+                dataTable.order(preferences.sortOrder).draw();
+            }
+        } catch (error) {
+            console.error('Error loading preferences:', error);
+        }
     }
 };
