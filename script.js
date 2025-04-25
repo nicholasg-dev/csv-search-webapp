@@ -63,50 +63,61 @@ document.addEventListener('DOMContentLoaded', function() {
  * This function is called when the user clicks the "Load Data" button in the upload modal
  * It reads the selected file, validates it, and parses it using PapaParse
  */
-function handleFileUpload() {
-    // Get the file input element and the selected file
-    const fileInput = document.getElementById('csvFileInput');
-    const file = fileInput.files[0];
-
-    // Validate that a file was selected
-    if (!file) {
-        alert('Please select a CSV file first.');
-        return;
-    }
-
-    // Validate that the file is a CSV file
-    // Check both MIME type and file extension
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-        alert('Please select a valid CSV file.');
-        return;
-    }
-
-    // Parse the CSV file using PapaParse library
-    Papa.parse(file, {
-        header: true,              // Treat the first row as headers
-        dynamicTyping: true,       // Automatically convert numeric values
-        skipEmptyLines: true,      // Skip empty lines in the CSV
-        transformHeader: function(header) {
-            // Clean up header names by trimming whitespace
-            return header.trim();
-        },
-        // Callback function when parsing is complete
-        complete: function(results) {
-            // Check for parsing errors
-            if (results.errors.length > 0) {
-                console.error('Error parsing CSV:', results.errors);
-                alert('Error parsing CSV file. Please check the console for details.');
-                return;
-            }
-
-            // Store the parsed data in the global variable
-            csvData = results.data;
-
-            // Display the data in the table
-            displayData(csvData, results.meta.fields);
+const handleFileUpload = async () => {
+    try {
+        const file = document.getElementById('csvFileInput').files[0];
+        if (!file) throw new Error('No file selected');
+        
+        // Add file size validation
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+        if (file.size > MAX_FILE_SIZE) {
+            throw new Error('File size exceeds 50MB limit');
         }
-    });
-}
+        
+        // Add file type validation
+        if (!file.type && !file.name.endsWith('.csv')) {
+            throw new Error('Invalid file type. Please upload a CSV file');
+        }
+        
+        // Parse the CSV file using PapaParse library
+        Papa.parse(file, {
+            header: true,              // Treat the first row as headers
+            dynamicTyping: true,       // Automatically convert numeric values
+            skipEmptyLines: true,      // Skip empty lines in the CSV
+            transformHeader: function(header) {
+                // Clean up header names by trimming whitespace
+                return header.trim();
+            },
+            // Callback function when parsing is complete
+            complete: function(results) {
+                // Check for parsing errors
+                if (results.errors.length > 0) {
+                    console.error('Error parsing CSV:', results.errors);
+                    alert('Error parsing CSV file. Please check the console for details.');
+                    return;
+                }
+
+                // Store the parsed data in the global variable
+                csvData = results.data;
+
+                // Display the data in the table
+                displayData(csvData, results.meta.fields);
+            }
+        });
+    } catch (error) {
+        showError(`Upload failed: ${error.message}`);
+    }
+};
+
+const showError = (message) => {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.container').prepend(alertDiv);
+};
 
 //=============================================================================
 // DATA DISPLAY FUNCTIONS
@@ -349,3 +360,40 @@ function exportFilteredData() {
     // Release the URL object to free up memory
     URL.revokeObjectURL(url);
 }
+
+// Add lazy loading for large datasets
+const loadData = async (data) => {
+    const CHUNK_SIZE = 1000;
+    let currentIndex = 0;
+    
+    while (currentIndex < data.length) {
+        const chunk = data.slice(currentIndex, currentIndex + CHUNK_SIZE);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        dataTable.rows.add(chunk);
+        currentIndex += CHUNK_SIZE;
+    }
+    dataTable.draw();
+};
+
+// Save user preferences
+const savePreferences = () => {
+    const preferences = {
+        pageLength: dataTable.page.len(),
+        visibleColumns: dataTable.columns().visible().toArray(),
+        sortOrder: dataTable.order()
+    };
+    localStorage.setItem('csvWebappPreferences', JSON.stringify(preferences));
+};
+
+// Load user preferences
+const loadPreferences = () => {
+    const saved = localStorage.getItem('csvWebappPreferences');
+    if (saved) {
+        const preferences = JSON.parse(saved);
+        dataTable.page.len(preferences.pageLength).draw();
+        preferences.visibleColumns.forEach((visible, index) => {
+            dataTable.column(index).visible(visible);
+        });
+        dataTable.order(preferences.sortOrder).draw();
+    }
+};
