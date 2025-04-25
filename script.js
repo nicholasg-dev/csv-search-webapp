@@ -186,7 +186,10 @@ function displayData(data, headers) {
             // Table configuration
             responsive: true,                    // Make table responsive to screen size
             pageLength: 25,                      // Number of rows per page
-            lengthMenu: [10, 25, 50, 100, 250],  // Options for rows per page
+            lengthMenu: [
+                [10, 25, 50, 100, 250, 1000, 1500, 2000],  // Values
+                [10, 25, 50, 100, 250, '1,000', '1,500', '2,000']  // Display labels with commas for readability
+            ],
 
             // DOM structure for DataTables elements
             // This defines where the length selector, filter, table, info, and pagination appear
