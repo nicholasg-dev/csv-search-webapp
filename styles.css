@@ -166,3 +166,22 @@ footer {
         width: 100%;                           /* Full width */
     }
 }
+
+.filter-panel {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.filter-operator {
+    width: 100px;
+}

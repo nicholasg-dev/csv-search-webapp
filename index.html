@@ -74,6 +74,13 @@
                             <i class="fas fa-question-circle me-1"></i> Help
                         </a>
                     </li>
+
+                    <!-- Column Visibility Button -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#columnModal">
+                            <i class="fas fa-columns me-1"></i> Columns
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -178,6 +185,23 @@
                 <!-- Modal Footer -->
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column Visibility Modal -->
+    <div class="modal fade" id="columnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Column Visibility</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="columnToggleList" class="list-group">
+                        <!-- Dynamically populated -->
+                    </div>
                 </div>
             </div>
         </div>
