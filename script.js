@@ -10,8 +10,20 @@
  * - DataTables: For displaying and interacting with tabular data
  * - Bootstrap: For UI components and styling
  *
+ * Security Features:
+ * - Honeypot fields to detect and block bots
+ * - Timing validation to prevent automated form submissions
+ * - Bot detection logging
+ * - File validation for uploads
+ *
+ * User Experience Features:
+ * - Column visibility controls
+ * - User preference saving
+ * - Support for large datasets (up to 2,000 entries per page)
+ * - Responsive design for all devices
+ *
  * @author Nicholas G
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 //=============================================================================
@@ -63,17 +75,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Set up event listener to set timestamp when upload modal is shown
+    // This timestamp is used to detect if the form is submitted too quickly (bot behavior)
     document.getElementById('uploadModal').addEventListener('show.bs.modal', function() {
         const timestampField = document.getElementById('formTimestamp');
         if (timestampField) {
+            // Store the current timestamp in milliseconds since epoch
             timestampField.value = Date.now().toString();
         }
     });
 
     // Set up event listener to clear honeypot field when upload modal is closed
+    // This prevents accidental filling of the honeypot by legitimate users
     document.getElementById('uploadModal').addEventListener('hidden.bs.modal', function() {
         const honeypotField = document.getElementById('website');
         if (honeypotField) {
+            // Reset the honeypot field to empty
             honeypotField.value = '';
         }
     });
@@ -90,54 +106,76 @@ document.addEventListener('DOMContentLoaded', function() {
  * Handle the CSV file upload and parsing
  * This function is called when the user clicks the "Load Data" button in the upload modal
  * It reads the selected file, validates it, and parses it using PapaParse
+ *
+ * Security measures implemented:
+ * 1. Honeypot validation - detects if bots have filled hidden fields
+ * 2. Timing validation - detects if the form was submitted too quickly to be human
+ * 3. File validation - checks file size and type
  */
 const handleFileUpload = async () => {
     try {
-        // Check honeypot field - if it's filled, it's likely a bot
+        // =====================================================================
+        // SECURITY CHECK 1: HONEYPOT VALIDATION
+        // =====================================================================
+        // Honeypot fields are invisible to humans but visible to bots
+        // If this field contains any value, it was likely filled by a bot
         const honeypotField = document.getElementById('website');
         if (honeypotField && honeypotField.value) {
-            // Log the bot attempt
+            // Log the bot attempt with details for analysis
             logBotAttempt('Honeypot field was filled', {
                 honeypotValue: honeypotField.value
             });
 
-            // Pretend the upload was successful but don't actually process anything
-            // This makes the bot think its attack worked while protecting your site
+            // Important: Don't tell the bot it was detected
+            // Instead, return a generic error that looks like a normal failure
+            // This prevents bots from learning how to bypass our protection
             showError('Upload failed: Invalid file format');
             return;
         }
 
-        // Check timestamp to detect automated form submissions
+        // =====================================================================
+        // SECURITY CHECK 2: TIMING VALIDATION
+        // =====================================================================
+        // Check how quickly the form was submitted after being opened
+        // Humans take time to select a file and click submit
+        // Bots often submit forms instantly or very quickly
         const timestampField = document.getElementById('formTimestamp');
         if (timestampField && timestampField.value) {
+            // Calculate time elapsed since the form was opened
             const formOpenTime = parseInt(timestampField.value, 10);
             const currentTime = Date.now();
             const timeDifference = currentTime - formOpenTime;
 
-            // If the form was submitted in less than 1.5 seconds, it's likely a bot
-            // Human users typically take longer to select a file and submit
+            // Threshold of 1.5 seconds - adjust as needed for your use case
+            // Most humans take at least this long to select a file and submit
             if (timeDifference < 1500) {
                 logBotAttempt('Form submitted too quickly', {
                     timeDifference: timeDifference,
                     threshold: 1500
                 });
 
-                // Pretend the upload was successful but don't actually process anything
+                // Again, use a generic error message
                 showError('Upload failed: Please try again');
                 return;
             }
         }
 
+        // =====================================================================
+        // SECURITY CHECK 3: FILE VALIDATION
+        // =====================================================================
+        // Get the selected file from the file input
         const file = document.getElementById('csvFileInput').files[0];
         if (!file) throw new Error('No file selected');
 
-        // Add file size validation
+        // File size validation - prevent denial of service attacks with huge files
+        // 50MB is a generous limit for CSV files - adjust based on your needs
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
         if (file.size > MAX_FILE_SIZE) {
             throw new Error('File size exceeds 50MB limit');
         }
 
-        // Add file type validation
+        // File type validation - ensure only CSV files are processed
+        // This helps prevent malicious file uploads and execution
         if (!file.type && !file.name.endsWith('.csv')) {
             throw new Error('Invalid file type. Please upload a CSV file');
         }
@@ -188,23 +226,38 @@ const showError = (message) => {
 
 /**
  * Log a bot attempt to the console and potentially to a server
- * @param {string} reason - The reason the bot was detected
- * @param {Object} data - Additional data about the bot attempt
+ * This function centralizes all bot detection logging for consistency and easier management
+ *
+ * In a production environment, you would want to send these logs to your server
+ * for analysis and to potentially block repeat offenders by IP or other identifiers
+ *
+ * @param {string} reason - The reason the bot was detected (e.g., 'honeypot filled', 'timing')
+ * @param {Object} data - Additional data about the bot attempt for analysis
  */
 const logBotAttempt = (reason, data = {}) => {
-    // Create log data object
+    // Create a comprehensive log data object with useful information for analysis
     const logData = {
+        // ISO timestamp for standardized logging
         timestamp: new Date().toISOString(),
+
+        // The detection reason helps categorize bot attempts
         reason: reason,
+
+        // User agent can help identify bot patterns
         userAgent: navigator.userAgent,
+
+        // Page URL where the attempt occurred
+        url: window.location.href,
+
+        // Include any additional data passed to the function
         ...data
     };
 
-    // Log to console for development
+    // Log to console for development and testing
     console.warn(`Bot detected: ${reason}`, logData);
 
     // In a production environment, you would send this to your server
-    // Simulated server logging - in production, uncomment the fetch code below
+    // Uncomment and configure the fetch call below in production
     /*
     fetch('/api/security/log-bot', {
         method: 'POST',
@@ -213,6 +266,18 @@ const logBotAttempt = (reason, data = {}) => {
         },
         body: JSON.stringify(logData)
     }).catch(err => console.error('Failed to log bot attempt:', err));
+    */
+
+    // You could also store bot attempts in localStorage to track repeat offenders
+    // This is optional and depends on your security needs
+    /*
+    try {
+        const botAttempts = JSON.parse(localStorage.getItem('botAttempts') || '[]');
+        botAttempts.push(logData);
+        localStorage.setItem('botAttempts', JSON.stringify(botAttempts.slice(-10))); // Keep last 10
+    } catch (e) {
+        console.error('Failed to store bot attempt in localStorage', e);
+    }
     */
 };
 
@@ -261,9 +326,10 @@ function displayData(data, headers) {
             data: data,                          // The CSV data
             columns: headers.map((header, index) => ({
                 title: header,                   // Column title
-                data: function(row, type, set, meta) {
+                data: function(row) {
                     // Use array index access instead of property name to avoid issues with special characters
                     // This is important for column names with spaces or special characters
+                    // Note: DataTables normally passes (row, type, set, meta) parameters, but we only need row
                     return Object.values(row)[index];
                 }
             })),
@@ -487,38 +553,43 @@ const loadData = async (data) => {
 /**
  * Populates the column toggle list in the column visibility modal
  * This function is called when the column visibility modal is shown
+ *
+ * It dynamically creates toggle switches for each column in the DataTable
+ * allowing users to show/hide specific columns based on their needs.
+ * The current visibility state is reflected in the toggle switches.
  */
 function populateColumnToggleList() {
-    // Make sure the DataTable exists
+    // Make sure the DataTable exists before proceeding
     if (!dataTable) {
         console.error('DataTable not initialized');
         return;
     }
 
-    // Get the column toggle list container
+    // Get the column toggle list container from the DOM
     const columnToggleList = document.getElementById('columnToggleList');
     if (!columnToggleList) {
         console.error('Column toggle list container not found');
         return;
     }
 
-    // Clear the existing list
+    // Clear any existing toggle switches to prevent duplicates
     columnToggleList.innerHTML = '';
 
     // Get all columns from the DataTable
     const columns = dataTable.columns();
     const columnCount = columns.data().length;
 
-    // Create a toggle button for each column
+    // Create a toggle switch for each column in the table
     for (let i = 0; i < columnCount; i++) {
-        // Get the column header text
+        // Get the column header text to display as the label
         const columnHeader = dataTable.column(i).header();
         const columnName = columnHeader ? columnHeader.textContent : `Column ${i+1}`;
 
-        // Get the current visibility state
+        // Get the current visibility state to set the initial toggle position
         const isVisible = dataTable.column(i).visible();
 
-        // Create a list item with a toggle switch
+        // Create a list item with a Bootstrap toggle switch
+        // The switch is linked to the column index for easy reference
         const listItem = document.createElement('div');
         listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
         listItem.innerHTML = `
@@ -533,93 +604,128 @@ function populateColumnToggleList() {
         columnToggleList.appendChild(listItem);
     }
 
-    // Add event listeners to the toggle switches
+    // Add event listeners to all toggle switches
+    // This allows immediate visibility changes when a switch is toggled
     const toggles = document.querySelectorAll('.column-toggle');
     toggles.forEach(toggle => {
         toggle.addEventListener('change', function() {
+            // Get the column index and new visibility state
             const columnIndex = this.getAttribute('data-column');
             const isVisible = this.checked;
 
-            // Toggle the column visibility
+            // Update the DataTable column visibility
             dataTable.column(columnIndex).visible(isVisible);
 
-            // Save the updated preferences
+            // Save the updated preferences to localStorage
+            // This ensures the user's column visibility preferences persist across sessions
             savePreferences();
         });
     });
 }
 
 /**
- * Toggle visibility of all columns
+ * Toggle visibility of all columns at once
+ * This is a convenience function that allows users to quickly show or hide all columns
+ * with a single click, rather than toggling each column individually.
+ *
  * @param {boolean} visible - Whether to show (true) or hide (false) all columns
  */
 function toggleAllColumns(visible) {
-    // Make sure the DataTable exists
+    // Make sure the DataTable exists before proceeding
     if (!dataTable) {
         console.error('DataTable not initialized');
         return;
     }
 
-    // Toggle all columns in the DataTable
+    // Toggle all columns in the DataTable to the specified visibility
+    // This uses DataTables' built-in columns().visible() method
     dataTable.columns().visible(visible);
 
-    // Update all toggle switches in the modal
+    // Update all toggle switches in the modal to match the new visibility state
+    // This ensures the UI stays in sync with the actual column visibility
     const toggles = document.querySelectorAll('.column-toggle');
     toggles.forEach(toggle => {
         toggle.checked = visible;
     });
 
-    // Save the updated preferences
+    // Save the updated preferences to localStorage
+    // This ensures the user's column visibility preferences persist across sessions
     savePreferences();
 }
 
 /**
  * Save user preferences to localStorage
- * This includes page length, visible columns, and sort order
+ * This function stores the user's customizations so they persist across page reloads
+ * and browser sessions. This improves user experience by remembering their preferred
+ * settings.
+ *
+ * Saved preferences include:
+ * - Page length (number of entries shown per page)
+ * - Column visibility settings (which columns are shown/hidden)
+ * - Sort order (which column is sorted and in what direction)
  */
 const savePreferences = () => {
+    // Only proceed if the DataTable has been initialized
     if (!dataTable) return;
 
+    // Create an object containing all user preferences
     const preferences = {
+        // Number of entries shown per page (10, 25, 50, etc.)
         pageLength: dataTable.page.len(),
+
+        // Array of boolean values indicating visibility of each column
         visibleColumns: dataTable.columns().visible().toArray(),
+
+        // Current sort order (column index and direction)
         sortOrder: dataTable.order()
     };
+
+    // Save the preferences object to localStorage as a JSON string
     localStorage.setItem('csvWebappPreferences', JSON.stringify(preferences));
 };
 
 /**
  * Load user preferences from localStorage
- * This includes page length, visible columns, and sort order
+ * This function retrieves and applies the user's previously saved preferences
+ * when the DataTable is initialized. This creates a consistent experience
+ * across sessions.
+ *
+ * If no preferences are found or if there's an error, default settings are used.
  */
 const loadPreferences = () => {
+    // Only proceed if the DataTable has been initialized
     if (!dataTable) return;
 
+    // Try to retrieve saved preferences from localStorage
     const saved = localStorage.getItem('csvWebappPreferences');
     if (saved) {
         try {
+            // Parse the JSON string back into an object
             const preferences = JSON.parse(saved);
 
-            // Set page length
+            // Apply the saved page length (number of entries per page)
             if (preferences.pageLength) {
                 dataTable.page.len(preferences.pageLength).draw();
             }
 
-            // Set column visibility
+            // Apply the saved column visibility settings
             if (preferences.visibleColumns && Array.isArray(preferences.visibleColumns)) {
                 preferences.visibleColumns.forEach((visible, index) => {
+                    // Make sure the column index is valid for the current table
                     if (index < dataTable.columns().data().length) {
                         dataTable.column(index).visible(visible);
                     }
                 });
             }
 
-            // Set sort order
+            // Apply the saved sort order
             if (preferences.sortOrder && Array.isArray(preferences.sortOrder)) {
                 dataTable.order(preferences.sortOrder).draw();
             }
         } catch (error) {
+            // Log any errors but don't disrupt the user experience
             console.error('Error loading preferences:', error);
+            // Default settings will be used if preferences can't be loaded
         }
     }
 };

@@ -168,19 +168,35 @@ footer {
 }
 
 /* ======================================
-   Security - Honeypot
+   Security - Honeypot Implementation
    ====================================== */
 
-/* Hide honeypot field from humans but keep it accessible to bots */
+/**
+ * Honeypot Field Styling
+ *
+ * This CSS hides form fields from human users while keeping them accessible to bots.
+ * The key concept is that these fields are invisible and inaccessible to humans,
+ * but most bots will still see and fill them because they parse the HTML directly.
+ *
+ * When a bot fills these fields, our JavaScript detects this and blocks the submission.
+ *
+ * Implementation notes:
+ * - We use multiple techniques to hide the field (opacity, position, size, etc.)
+ * - This redundancy ensures the field stays hidden across different browsers
+ * - We use pointer-events: none to prevent any mouse interaction
+ * - The field remains in the DOM and is accessible to screen readers and bots
+ */
 .honeypot-field {
-    opacity: 0;                               /* Make it invisible */
-    position: absolute;                        /* Take it out of the normal flow */
-    top: 0;                                    /* Position it off-screen */
-    left: -9999px;                             /* Move it far off-screen */
-    height: 0;                                 /* No height */
-    width: 0;                                  /* No width */
-    z-index: -1;                               /* Behind everything */
-    pointer-events: none;                      /* Cannot be interacted with */
+    opacity: 0;                               /* Make it invisible to humans */
+    position: absolute;                        /* Take it out of the normal document flow */
+    top: 0;                                    /* Position it at the top */
+    left: -9999px;                             /* Move it far off-screen to the left */
+    height: 0;                                 /* No height so it doesn't take up space */
+    width: 0;                                  /* No width so it doesn't take up space */
+    z-index: -1;                               /* Place it behind all other elements */
+    pointer-events: none;                      /* Disable all mouse/touch interactions */
+    user-select: none;                         /* Prevent text selection */
+    tab-index: -1;                             /* Remove from tab order */
 }
 
 .filter-panel {

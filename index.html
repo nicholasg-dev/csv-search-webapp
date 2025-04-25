@@ -141,11 +141,33 @@
                             <!-- File input restricted to CSV files only -->
                             <input class="form-control" type="file" id="csvFileInput" accept=".csv">
                         </div>
-                        <!-- Honeypot field - hidden from humans but visible to bots -->
+                        <!--
+                        SECURITY FEATURE: HONEYPOT FIELD
+                        This is a bot detection mechanism that works as follows:
+
+                        1. The field below is hidden from human users via CSS (.honeypot-field class)
+                        2. Bots that automatically fill forms will likely fill this field
+                        3. Our JavaScript checks if this field contains any value
+                        4. If the field is filled, we know it's likely a bot and block the submission
+
+                        This is a simple but effective way to prevent many automated attacks.
+                        The field is named "website" to entice bots to fill it (they often look for fields with common names).
+                        -->
                         <div class="honeypot-field">
                             <label for="website">Website</label>
                             <input type="text" id="website" name="website" autocomplete="off">
-                            <!-- Hidden timestamp to detect automated form submissions -->
+
+                            <!--
+                            SECURITY FEATURE: TIMESTAMP FIELD
+                            This hidden field stores when the form was opened:
+
+                            1. When the modal opens, we set this field to the current timestamp
+                            2. When the form is submitted, we check how much time has passed
+                            3. If submission happens too quickly (< 1.5 seconds), it's likely a bot
+                            4. Human users take time to select a file and click submit
+
+                            This catches bots that are smart enough to avoid honeypot fields.
+                            -->
                             <input type="hidden" id="formTimestamp" name="formTimestamp">
                         </div>
                     </form>

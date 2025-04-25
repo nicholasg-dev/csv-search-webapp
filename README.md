@@ -16,6 +16,10 @@ A modern, client-side web application that allows users to upload and search thr
 - **Modern UI**: Clean, intuitive interface with Bootstrap 5
 - **Client-Side Processing**: Fast data handling with no server-side processing
 - **Special Character Support**: Handles CSV files with special characters and spaces in column names
+- **Large Dataset Support**: Options to display up to 2,000 entries per page
+- **Column Visibility Control**: Toggle visibility of specific columns
+- **Bot Protection**: Honeypot fields and timing checks to prevent automated abuse
+- **User Preferences**: Remembers user settings for page length, column visibility, and sorting
 
 ## Installation
 
@@ -61,6 +65,15 @@ A modern, client-side web application that allows users to upload and search thr
    - Click the "Export" button in the navigation bar
    - Choose your preferred format (CSV, Excel, PDF, etc.)
 
+7. To manage column visibility:
+   - Click the "Columns" button in the navigation bar
+   - Use the toggle switches to show/hide specific columns
+   - Use "Select All" or "Deselect All" buttons for quick adjustments
+
+8. To change the number of entries displayed:
+   - Use the "Show entries" dropdown at the top of the table
+   - Options range from 10 to 2,000 entries per page
+
 ## Technical Architecture
 
 ### Frontend
@@ -73,6 +86,14 @@ A modern, client-side web application that allows users to upload and search thr
 - **DataTables**: Advanced table functionality
 - **PapaParse**: CSV parsing library
 - **Font Awesome**: Icon library
+
+### Security Features
+
+- **Honeypot Fields**: Hidden form fields that are invisible to humans but visible to bots
+- **Timing Validation**: Detection of forms submitted too quickly to be from a human
+- **Bot Detection Logging**: Console logging of detected bot activities (can be extended to server-side)
+- **File Validation**: Size and type validation for uploaded files
+- **Error Handling**: Secure error messages that don't reveal system details
 
 ### Backend
 
@@ -119,6 +140,13 @@ csv-search-webapp/
 - **Add Authentication**: Implement user authentication for restricted access
 - **Server-Side Processing**: Modify `server.js` to handle large datasets on the server
 - **Database Integration**: Connect to a database for persistent storage
+
+### Security Configuration
+
+- **Bot Protection**: The honeypot implementation can be found in the upload form and related JavaScript
+- **Logging Configuration**: Modify the `logBotAttempt` function in `script.js` to send logs to your server
+- **Timing Threshold**: Adjust the timing threshold (currently 1.5 seconds) in `handleFileUpload` function
+- **Additional Honeypots**: Add more honeypot fields to other forms as needed
 
 ## Browser Compatibility
 
